@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Points - The Icon Public School</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; }
+        .main-header { background: #ffcc00; padding: 10px 15px; text-align: center; }
+        .main-title { margin: 0; color: #000; font-size: 1.8em; font-weight: bold; }
+        #app { padding: 20px; min-height: 80vh; text-align: center; }
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 500px;  /* smaller width */
+            height: 500px;     /* smaller height */
+            margin: 30px auto; 
+        }
+        .house-links { 
+            margin: 30px auto; 
+            max-width: 900px; 
+            display: flex; 
+            justify-content: center; 
+            gap: 60px; 
+            flex-wrap: wrap; 
+        }
+        .house-link img { 
+            width: 140px; 
+            height: 140px; 
+            object-fit: contain; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            transition: transform 0.3s, box-shadow 0.3s; 
+        }
+        .house-link img:hover { 
+            transform: scale(1.08); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2); 
+        }
+        .admin-section { 
+            margin: 60px auto; 
+            max-width: 500px; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); 
+        }
+        .admin-section h3 { margin-bottom: 30px; color: #333; font-size: 1.8em; }
+        .admin-section input { width: 100%; padding: 16px; font-size: 1.3em; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 20px; }
+        .admin-section button { background: #006400; color: white; padding: 16px 40px; border: none; border-radius: 8px; font-size: 1.5em; cursor: pointer; width: 100%; }
+        .admin-section button:hover { background: #004d00; }
+        #adminMessage { margin-top: 20px; font-weight: bold; font-size: 1.2em; }
+        .form-container { background: white; padding: 50px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); max-width: 700px; margin: 40px auto; }
+        .commit-form label { display: block; margin: 25px 0 10px; font-weight: bold; text-align: left; font-size: 1.1em; }
+        .commit-form select, .commit-form input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #ccc; font-size: 1.1em; box-sizing: border-box; }
+        .commit-form button { background: #006400; color: white; padding: 18px 40px; border: none; border-radius: 8px; font-size: 1.3em; cursor: pointer; margin-top: 30px; }
+        .commit-form button:hover { background: #004d00; }
+        #message { margin-top: 25px; font-weight: bold; font-size: 1.2em; }
+        .back-link { display: block; margin: 50px auto 20px; text-align: center; color: #006400; font-weight: bold; font-size: 1.3em; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<header class="main-header">
+    <h1 class="main-title">THE ICON PUBLIC SCHOOL</h1>
+</header>
+
+<div id="app"></div>
+
+<script>
+const API = "https://backend-6fz3.onrender.com/api";
+const CORRECT_PASSWORD = "icon2026";
+const HOME_URL = "http://127.0.0.1:5500/frontend/index.html";
+
+const houses = ["titan", "phoenix", "unicorn", "trojan"];
+const houseNames = { titan: "Titan", phoenix: "Phoenix", unicorn: "Unicorn", trojan: "Trojan" };
+const houseLogos = { 
+    titan: "titan.jpg", 
+    phoenix: "phoenix.jpg", 
+    unicorn: "unicorn.jpg", 
+    trojan: "trojan.jpg" 
+};
+
+const headerColors = { titan: "#006400", phoenix: "#004080", unicorn: "#b8860b", trojan: "#8B0000" };
+const bgAlternates = { titan: "#f0fff0", phoenix: "#f0f8ff", unicorn: "#fffbe6", trojan: "#fff0f0" };
+const hoverBgs = { titan: "#e0ffe0", phoenix: "#e0f0ff", unicorn: "#fff5cc", trojan: "#ffe0e0" };
+
+let chart;
+
+function navigate() {
+    const hash = window.location.hash.substring(1).toLowerCase().replace(/\/$/, '');
+    const path = hash || '/';
+
+    const houseMatch = path.match(/^([a-z]+)$/);
+    if (houseMatch && houses.includes(houseMatch[1])) {
+        showHousePage(houseMatch[1]);
+        return;
+    }
+
+    showChart();
+}
+
+async function showChart() {
+    document.getElementById("app").innerHTML = `
+        <div class="house-links">
+            <div class="house-link"><img src=" ${houseLogos.titan}" alt="Titan" onclick="window.location.hash='titan'"></div>
+            <div class="house-link"><img src=" ${houseLogos.phoenix}" alt="Phoenix" onclick="window.location.hash='phoenix'"></div>
+            <div class="house-link"><img src=" ${houseLogos.unicorn}" alt="Unicorn" onclick="window.location.hash='unicorn'"></div>
+            <div class="house-link"><img src=" ${houseLogos.trojan}" alt="Trojan" onclick="window.location.hash='trojan'"></div>
+        </div>
+        <div class="chart-container">
+            <canvas id="houseChart"></canvas>
+        </div>
+        <div class="admin-section">
+            <h3>Admin Access</h3>
+            <input type="password" id="adminPassword" placeholder="Enter password">
+            <button id="adminEnter">Enter Admin Mode</button>
+            <div id="adminMessage"></div>
+        </div>
+    `;
+
+    let points = [0, 0, 0, 0];
+    try {
+        const res = await fetch(`${API}/house-points`);
+        if (res.ok) {
+            const data = await res.json();
+            points = houses.map(h => data.find(x => x.houseName?.toLowerCase() === h)?.points || 0);
+        }
+    } catch {}
+
+    const displayData = points.every(p => p === 0) ? [25, 25, 25, 25] : points;
+
+    chart = new Chart(document.getElementById("houseChart"), {
+        type: "pie",
+        data: {
+            labels: ["Titan", "Phoenix", "Unicorn", "Trojan"],
+            datasets: [{ data: displayData, backgroundColor: ["#00b140", "#007bff", "#ffea00", "#d60000"] }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: "bottom", labels: { font: { size: 16 } } },
+                datalabels: {
+                    color: "white",
+                    font: { weight: "bold", size: 20 },
+                    formatter: (value) => value === 25 ? "0" : value
+                }
+            },
+            onClick: (e, elements) => {
+                if (elements.length > 0) {
+                    const i = elements[0].index;
+                    window.location.hash = houses[i];
+                }
+            }
+        }
+    });
+
+    const adminBtn = document.getElementById("adminEnter");
+    const adminInput = document.getElementById("adminPassword");
+    const adminMsg = document.getElementById("adminMessage");
+
+    adminBtn.addEventListener("click", () => {
+        const password = adminInput.value.trim();
+        if (password === CORRECT_PASSWORD) {
+            showCommitPage();
+        } else {
+            adminMsg.textContent = "Wrong password";
+            adminMsg.style.color = "red";
+        }
+    });
+
+    adminInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") adminBtn.click();
+    });
+}
+
+async function showHousePage(house) {
+    const headerColor = headerColors[house];
+    const altBg = bgAlternates[house];
+    const hoverBg = hoverBgs[house];
+
+    document.getElementById("app").innerHTML = `
+        <div style="max-width:900px;margin:0 auto;padding:20px;">
+            <img src=" ${houseLogos[house]}" style="width:200px;height:200px;margin:30px auto;display:block;" onerror="this.style.display='none'">
+            <div id="points" style="font-size:3em;font-weight:bold;color:${headerColor};margin:40px 0;">Loading points...</div>
+            <table style="width:90%;max-width:800px;margin:40px auto;background:white;
+                   box-shadow:0 4px 20px rgba(0,0,0,0.15);border-radius:12px;border-collapse:separate;border-spacing:0;">
+                <thead>
+                    <tr>
+                        <th style="background:${headerColor};color:white;padding:18px;border-top-left-radius:12px;font-size:1.2em;">Commit</th>
+                        <th style="background:${headerColor};color:white;padding:18px;font-size:1.2em;">Points</th>
+                        <th style="background:${headerColor};color:white;padding:18px;border-top-right-radius:12px;font-size:1.2em;">Date</th>
+                    </tr>
+                </thead>
+                <tbody id="commitBody"><tr><td colspan="3">Loading commits...</td></tr></tbody>
+            </table>
+            <a href="/" class="back-link">← Back to Chart</a>
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`${API}/house-points`);
+        const data = await res.json();
+        const h = data.find(x => x.houseName?.toLowerCase() === house);
+        document.getElementById("points").textContent = `Total Points: ${h?.points ?? 0}`;
+    } catch {
+        document.getElementById("points").textContent = "Total Points: (offline)";
+    }
+
+    try {
+        const res = await fetch(`${API}/${house}_commit`);
+        const json = await res.json();
+        const commits = json.success && json.data ? json.data : [];
+        const tbody = document.getElementById("commitBody");
+        tbody.innerHTML = commits.length === 0 ? `<tr><td colspan="3">No commits yet</td></tr>` : "";
+        commits.forEach((c, i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td style="font-weight:bold;color:${headerColor};padding:15px;">${escapeHtml(c.reason || "No reason")}</td>
+                <td style="padding:15px;">${c.points ?? 0}</td>
+                <td style="padding:15px;">${new Date(c.createdAt).toLocaleDateString()}</td>
+            `;
+            tr.style.backgroundColor = i % 2 === 0 ? altBg : "white";
+            tr.onmouseover = () => tr.style.backgroundColor = hoverBg;
+            tr.onmouseout = () => tr.style.backgroundColor = i % 2 === 0 ? altBg : "white";
+            tbody.appendChild(tr);
+        });
+        if (tbody.lastElementChild) {
+            const last = tbody.lastElementChild;
+            last.style.borderBottomLeftRadius = "12px";
+            last.style.borderBottomRightRadius = "12px";
+            last.cells[0].style.borderBottomLeftRadius = "12px";
+            last.cells[last.cells.length - 1].style.borderBottomRightRadius = "12px";
+        }
+    } catch {
+        document.getElementById("commitBody").innerHTML = `<tr><td colspan="3">Error loading commits</td></tr>`;
+    }
+}
+
+function showCommitPage() {
+    document.getElementById("app").innerHTML = `
+        <div class="form-container">
+            <h2 style="color:#333;margin-bottom:40px;font-size:2em;">Add New Commit</h2>
+            <form id="commit-form" class="commit-form">
+                <label for="house">House:</label>
+                <select id="house">
+                    <option value="titan">Titan</option>
+                    <option value="phoenix">Phoenix</option>
+                    <option value="unicorn">Unicorn</option>
+                    <option value="trojan">Trojan</option>
+                </select>
+                <label for="name">Student Name:</label>
+                <input type="text" id="name" required placeholder="e.g. John Doe">
+                <label for="anecdote">Reason:</label>
+                <input type="text" id="anecdote" required placeholder="e.g. Excellent behavior">
+                <label for="points">Points (+ or -):</label>
+                <input type="number" id="points" required placeholder="e.g. 50 or -20">
+                <button type="submit">Commit</button>
+            </form>
+            <div id="message"></div>
+            <a href="/" class="back-link">← Back to Chart</a>
+        </div>
+    `;
+
+    document.getElementById("commit-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const message = document.getElementById("message");
+        message.textContent = "Submitting...";
+        message.style.color = "#006400";
+
+        const houseVal = document.getElementById("house").value;
+        const formData = {
+            name: document.getElementById("name").value.trim(),
+            reason: document.getElementById("anecdote").value.trim(),
+            points: Number(document.getElementById("points").value)
+        };
+
+        if (!formData.name || !formData.reason || isNaN(formData.points)) {
+            message.textContent = "Please fill all fields correctly";
+            message.style.color = "red";
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API}/${houseVal}_commit`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await res.json();
+
+            if (res.ok && result.success) {
+                message.textContent = `Success! ${formData.points > 0 ? '+' : ''}${formData.points} points awarded!`;
+                message.style.color = "#006400";
+                e.target.reset();
+            } else {
+                message.textContent = result.message || "Failed to submit";
+                message.style.color = "red";
+            }
+        } catch (err) {
+            message.textContent = "Network error";
+            message.style.color = "red";
+        }
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+window.addEventListener('hashchange', navigate);
+navigate();
+</script>
+</body>
+</html>
