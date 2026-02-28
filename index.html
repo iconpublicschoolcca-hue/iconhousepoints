@@ -204,13 +204,14 @@ async function showHousePage(house) {
                    box-shadow:0 4px 20px rgba(0,0,0,0.15);border-radius:12px;border-collapse:separate;border-spacing:0;">
                 <thead>
                     <tr>
-                        <th style="background:${headerColor};color:white;padding:18px;border-top-left-radius:12px;font-size:1.2em;">Commit</th>
+                        <th style="background:${headerColor};color:white;padding:18px;border-top-left-radius:12px;font-size:1.2em;">Student Name</th>
+                        <th style="background:${headerColor};color:white;padding:18px;font-size:1.2em;">Anecdote</th>
                         <th style="background:${headerColor};color:white;padding:18px;font-size:1.2em;">Points</th>
                         <th style="background:${headerColor};color:white;padding:18px;font-size:1.2em;">Teacher</th>
                         <th style="background:${headerColor};color:white;padding:18px;border-top-right-radius:12px;font-size:1.2em;">Date</th>
                     </tr>
                 </thead>
-                <tbody id="commitBody"><tr><td colspan="4">Loading commits...</td></tr></tbody>
+                <tbody id="commitBody"><tr><td colspan="5">Loading commits...</td></tr></tbody>
             </table>
             <a href="/" class="back-link">← Back to Chart</a>
         </div>
@@ -233,14 +234,25 @@ async function showHousePage(house) {
         const json = await res.json();
         const commits = json.success && json.data ? json.data : [];
         const tbody = document.getElementById("commitBody");
-        tbody.innerHTML = commits.length === 0 ? `<tr><td colspan="4">No commits yet</td></tr>` : "";
+        tbody.innerHTML = commits.length === 0 ? `<tr><td colspan="5">No commits yet</td></tr>` : "";
         commits.forEach((c, i) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-              <td style="font-weight:bold;color:${headerColor};padding:15px;">${escapeHtml(c.reason || "No reason")}</td>
-              <td style="padding:15px;">${c.points ?? 0}</td>
-              <td style="padding:15px;font-weight:bold;color:#444;">${escapeHtml(c.teacher || "Unknown")}</td>
-              <td style="padding:15px;">${new Date(c.createdAt).toLocaleDateString()}</td>
+              <td style="font-weight:bold;color:${headerColor};padding:15px;">
+               ${escapeHtml(c.name || "Unknown")}
+              </td>
+              <td style="padding:15px;">
+               ${escapeHtml(c.reason || "No anecdote")}
+              </td>
+              <td style="padding:15px;">
+               ${c.points ?? 0}
+              </td>
+              <td style="padding:15px;font-weight:bold;color:#444;">
+               ${escapeHtml(c.teacher || "Unknown")}
+              </td>
+              <td style="padding:15px;">
+               ${new Date(c.createdAt).toLocaleDateString()}
+              </td>
             `;
             tr.style.backgroundColor = i % 2 === 0 ? altBg : "white";
             tr.onmouseover = () => tr.style.backgroundColor = hoverBg;
@@ -255,7 +267,7 @@ async function showHousePage(house) {
             last.cells[last.cells.length - 1].style.borderBottomRightRadius = "12px";
         }
     } catch (err) {
-        document.getElementById("commitBody").innerHTML = `<tr><td colspan="4">Error loading commits</td></tr>`;
+        document.getElementById("commitBody").innerHTML = `<tr><td colspan="5">Error loading commits</td></tr>`;
     }
 }
 
