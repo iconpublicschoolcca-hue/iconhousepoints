@@ -299,16 +299,59 @@ function showCommitPage() {
                 </select>
                 <label for="name">Student Name:</label>
                 <input type="text" id="name" required placeholder="e.g. John Doe">
-                <label for="anecdote">Reason:</label>
-                <input type="text" id="anecdote" required placeholder="e.g. Excellent behavior">
-                <label for="points">Points (+ or -):</label>
-                <input type="number" id="points" required placeholder="e.g. 50 or -20">
-                <button type="submit">Commit</button>
-            </form>
-            <div id="message"></div>
+                <label for="reasonSelect">Reason:</label>
+                <select id="reasonSelect">
+                  <optgroup label="Positive (+)">
+                  <option value="Excellent behavior">Excellent behavior</option>
+                  <option value="Helping others">Helping others</option>
+                  <option value="Outstanding homework">Outstanding homework</option>
+                  <option value="Leadership skills">Leadership skills</option>
+                  <option value="Sports achievement">Sports achievement</option>
+                  <option value="Creative work">Creative work</option>
+                  <option value="Class participation">Class participation</option>
+                  <option value="Discipline">Discipline</option>
+                  <option value="Respectfulness">Respectfulness</option>
+                  <option value="Academic excellence">Academic excellence</option>
+                  </optgroup>
+
+                  <optgroup label="Negative (-)">
+                  <option value="Late submission">Late submission</option>
+                  <option value="Disruptive behavior">Disruptive behavior</option>
+                  <option value="Incomplete homework">Incomplete homework</option>
+                  <option value="Uniform violation">Uniform violation</option>
+                  <option value="Fighting">Fighting</option>
+                  <option value="Disrespect">Disrespect</option>
+                  <option value="Class disturbance">Class disturbance</option>
+                  <option value="Late to school">Late to school</option>
+                  <option value="Misconduct">Misconduct</option>
+                  <option value="Rule violation">Rule violation</option>
+                  </optgroup>
+
+                  <option value="other">Other (Type manually)</option>
+                </select>
+
+                <input type="text" id="customReason" placeholder="Type custom reason..." 
+                  style="display:none;margin-top:15px;">
+                  <label for="points">Points (+ or -):</label>
+                  <input type="number" id="points" required placeholder="e.g. 50 or -20">
+                  <button type="submit">Commit</button>
+              </form>
+              <div id="message"></div>
             <a href="/" class="back-link">← Back to Chart</a>
         </div>
     `;
+
+    const reasonSelect = document.getElementById("reasonSelect");
+    const customReasonInput = document.getElementById("customReason");
+
+    reasonSelect.addEventListener("change", () => {
+      if (reasonSelect.value === "other") {
+        customReasonInput.style.display = "block";
+      } else {
+        customReasonInput.style.display = "none";
+        customReasonInput.value = "";
+      }
+    });
 
     document.getElementById("commit-form").addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -317,11 +360,14 @@ function showCommitPage() {
         message.style.color = "#006400";
 
         const houseVal = document.getElementById("house").value;
+        let selectedReason = document.getElementById("reasonSelect").value;
+        let customReason = document.getElementById("customReason").value.trim();
+
         const formData = {
           name: document.getElementById("name").value.trim(),
-          reason: document.getElementById("anecdote").value.trim(),
+          reason: selectedReason === "other" ? customReason : selectedReason,
           points: Number(document.getElementById("points").value),
-          teacher: currentTeacher   // 👈 ADD THIS
+          teacher: currentTeacher
         };
 
         if (!formData.name || !formData.reason || isNaN(formData.points)) {
