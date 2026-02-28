@@ -143,24 +143,38 @@ async function showChart() {
       console.log("Error loading chart data", err);
     }
 
-    const displayData = points.every(p => p === 0) ? [1, 1, 1, 1] : points;
+    // REAL data (can be negative)
+    const realData = points;
+
+// SAFE data for pie chart rendering (must be positive)
+    const safeData = realData.map(p => p <= 0 ? 1 : p);
 
     chart = new Chart(document.getElementById("houseChart"), {
         type: "pie",
         data: {
             labels: ["Titan", "Phoenix", "Unicorn", "Trojan"],
-            datasets: [{ data: displayData, backgroundColor: ["#00b140", "#007bff", "#ffea00", "#d60000"] }]
+            datasets: [{
+              data: safeData,
+              backgroundColor: ["#00b140", "#007bff", "#ffea00", "#d60000"]
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-                legend: { position: "bottom", labels: { font: { size: 16 } } },
-                datalabels: {
-                    color: "white",
-                    font: { weight: "bold", size: 20 },
-                    formatter: (value) => value === 25 ? "0" : value
+              legend: { 
+                position: "bottom", 
+                labels: { font: { size: 16 } } 
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                  const index = context.dataIndex;
+                  const realValue = realData[index];
+                  return context.label + ": " + realValue;
+                  }
                 }
+              }
             },
             onClick: (e, elements) => {
                 if (elements.length > 0) {
