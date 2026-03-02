@@ -118,6 +118,15 @@ async function showChart() {
         <div class="chart-container">
             <canvas id="houseChart"></canvas>
         </div>
+        <div style="max-width:1000px;margin:40px auto;">
+          <h2 style="margin-bottom:20px;">Latest Activity</h2>
+            <div id="latestCommits" style="
+             display:grid;
+             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+             gap:20px;">
+              <div>Loading latest commits...</div>
+            </div>
+        </div>
         <div class="admin-section">
             <h3>Admin Access</h3>
             <input type="password" id="adminPassword" placeholder="Enter password">
@@ -203,6 +212,58 @@ async function showChart() {
     adminInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") adminBtn.click();
     });
+
+    loadLatestCommits();
+}
+
+async function loadLatestCommits() {
+    const container = document.getElementById("latestCommits");
+    container.innerHTML = "";
+
+    for (const house of houses) {
+        try {
+            const res = await fetch(`${API}/${house}_commit`);
+            const json = await res.json();
+            const commits = json.success && json.data ? json.data : [];
+
+            const latest = commits[0]; // assuming newest first
+
+            const card = document.createElement("div");
+            card.style.background = "white";
+            card.style.padding = "20px";
+            card.style.borderRadius = "12px";
+            card.style.boxShadow = "0 4px 15px rgba(0,0,0,0.1)";
+            card.style.cursor = "pointer";
+
+            card.onclick = () => window.location.hash = house;
+
+            if (latest) {
+                card.innerHTML = `
+                    <h3 style="margin:0 0 10px;color:${headerColors[house]}">
+                        ${houseNames[house]}
+                    </h3>
+                    <p style="margin:5px 0;"><b>${escapeHtml(latest.name)}</b></p>
+                    <p style="margin:5px 0;">${escapeHtml(latest.reason)}</p>
+                    <p style="margin:5px 0;font-weight:bold;">
+                        ${latest.points > 0 ? '+' : ''}${latest.points}
+                    </p>
+                    <p style="margin:5px 0;color:#777;font-size:0.9em;">
+                        ${new Date(latest.createdAt).toLocaleDateString()}
+                    </p>
+                `;
+            } else {
+                card.innerHTML = `
+                    <h3 style="color:${headerColors[house]}">${houseNames[house]}</h3>
+                    <p>No commits yet</p>
+                `;
+            }
+
+            container.appendChild(card);
+
+        } catch (err) {
+            console.log("Error loading latest for", house);
+        }
+    }
 }
 
 async function showHousePage(house) {
