@@ -71,11 +71,6 @@
 
 <script>
 const API = "https://backend-6fz3.onrender.com/api";
-const PASSWORDS = {
-    "icon2026": "Admin",
-    "icon2025": "Rebecca maam",
-    "icon2024": "Sarita maam"
-};
 
 let authorizedBy = null;
 
@@ -197,21 +192,63 @@ async function showChart() {
     const adminBtn = document.getElementById("adminEnter");
     const adminInput = document.getElementById("adminPassword");
     const adminMsg = document.getElementById("adminMessage");
+     
+    adminBtn.addEventListener("click", async () => {
 
-    adminBtn.addEventListener("click", () => {
-        const password = adminInput.value.trim();
-        if (PASSWORDS[password]) {
-          authorizedBy = PASSWORDS[password];
-          showCommitPage();
+    const password = adminInput.value.trim();
+
+    if (!password) {
+        adminMsg.textContent = "Enter password";
+        adminMsg.style.color = "red";
+        return;
+    }
+
+    try {
+
+        const res = await fetch(`${API}/admin-login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ password })
+        });
+
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+            authorizedBy = result.authorizedBy;
+            showCommitPage();
         } else {
-          adminMsg.textContent = "Wrong password";
-          adminMsg.style.color = "red";
+            adminMsg.textContent = "Wrong password";
+            adminMsg.style.color = "red";
         }
-    });
+
+    } catch (err) {
+        adminMsg.textContent = "Server error";
+        adminMsg.style.color = "red";
+    }
+
+});
 
     adminInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") adminBtn.click();
     });
+
+    const ranking = houses
+      .map((h,i)=>({name:houseNames[h], points:realData[i]}))
+      .sort((a,b)=>b.points-a.points);
+
+    const rankHTML = ranking.map((r,i)=>
+      `<div>${i+1}. ${r.name} - ${r.points}</div>`
+    ).join("");
+
+    document.querySelector(".chart-container").insertAdjacentHTML("afterend", `
+        <div style="margin-top:20px;font-size:1.2em;font-weight:bold;">
+        House Rankings<br>${rankHTML}
+        </div>
+    `);
+
+    setTimeout(showChart, 30000); // refresh every 30s
 
     loadLatestCommits();
 }
@@ -224,7 +261,7 @@ async function loadLatestCommits() {
         try {
             const res = await fetch(`${API}/${house}_commit`);
             const json = await res.json();
-            const commits = json.success && json.data ? json.data : [];
+            const commits = (json.success && json.data ? json.data : []).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
 
             const latest = commits[0]; // assuming newest first
 
@@ -308,7 +345,8 @@ async function showHousePage(house) {
     try {
         const res = await fetch(`${API}/${house}_commit`);
         const json = await res.json();
-        const commits = json.success && json.data ? json.data : [];
+        const commits = (json.success && json.data ? json.data : [])
+.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
         const tbody = document.getElementById("commitBody");
         tbody.innerHTML = commits.length === 0 ? `<tr><td colspan="6">No commits yet</td></tr>` : "";
         commits.forEach((c, i) => {
